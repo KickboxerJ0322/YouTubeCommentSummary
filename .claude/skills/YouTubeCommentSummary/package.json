@@ -1,0 +1,7 @@
+{
+  "name": "youtube-comment-summary",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
