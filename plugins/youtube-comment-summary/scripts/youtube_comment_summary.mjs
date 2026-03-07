@@ -14,8 +14,9 @@ if (!API_KEY) {
   process.exit(1)
 }
 
-const [, , url, maxArg] = process.argv
+const [, , inputArg, maxArg, maxVideosArg] = process.argv
 const MAX = Number(maxArg || 300)
+const MAX_VIDEOS = Math.min(Math.max(Number(maxVideosArg || 3), 1), 4)
 
 function getVideoId(u) {
   try {
@@ -35,11 +36,10 @@ function getVideoId(u) {
   }
 }
 
-const videoId = getVideoId(url)
-
-if (!videoId) {
-  console.error("動画URLが不正です")
-  process.exit(1)
+function truncate(text, max = 140) {
+  if (!text) return ""
+  if (text.length <= max) return text
+  return `${text.slice(0, max)}...`
 }
 
 function cleanText(text) {
@@ -84,7 +84,7 @@ async function fetchJSON(endpoint, params) {
   return res.json()
 }
 
-async function getVideoInfo() {
+async function getVideoInfo(videoId) {
   const data = await fetchJSON("videos", {
     part: "snippet,statistics",
     id: videoId
@@ -97,8 +97,12 @@ async function getVideoInfo() {
   }
 
   return {
+    id: v.id,
+    videoUrl: `https://www.youtube.com/watch?v=${v.id}`,
     title: v.snippet.title,
     channel: v.snippet.channelTitle,
+    description: v.snippet.description || "",
+    publishedAt: v.snippet.publishedAt || "",
     comments: Number(v.statistics.commentCount || 0),
     thumbnail:
       v.snippet.thumbnails?.maxres?.url ||
@@ -110,7 +114,50 @@ async function getVideoInfo() {
   }
 }
 
-async function getComments(limit) {
+async function searchVideosByKeyword(keyword, limit) {
+  const data = await fetchJSON("search", {
+    part: "snippet",
+    q: keyword,
+    type: "video",
+    maxResults: limit,
+    order: "relevance"
+  })
+
+  const ids = (data.items || [])
+    .map(item => item.id?.videoId)
+    .filter(Boolean)
+
+  if (ids.length === 0) return []
+
+  const details = await fetchJSON("videos", {
+    part: "snippet,statistics",
+    id: ids.join(",")
+  })
+
+  const byId = new Map((details.items || []).map(v => [v.id, v]))
+
+  return ids
+    .map(id => byId.get(id))
+    .filter(Boolean)
+    .map(v => ({
+      id: v.id,
+      videoUrl: `https://www.youtube.com/watch?v=${v.id}`,
+      title: v.snippet.title,
+      channel: v.snippet.channelTitle,
+      description: v.snippet.description || "",
+      publishedAt: v.snippet.publishedAt || "",
+      comments: Number(v.statistics.commentCount || 0),
+      thumbnail:
+        v.snippet.thumbnails?.maxres?.url ||
+        v.snippet.thumbnails?.standard?.url ||
+        v.snippet.thumbnails?.high?.url ||
+        v.snippet.thumbnails?.medium?.url ||
+        v.snippet.thumbnails?.default?.url ||
+        ""
+    }))
+}
+
+async function getComments(videoId, limit) {
   const comments = []
   let pageToken = null
 
@@ -780,32 +827,310 @@ function buildHTML({ info, summary, keywords, comments, sourceUrl, palette }) {
 </html>`
 }
 
-async function main() {
-  const info = await getVideoInfo()
-  const comments = await getComments(MAX)
-  const keywords = extractKeywords(comments)
-  const summary = summarizeComments(comments)
-  const palette = choosePalette()
+function buildKeywordHTML({ keyword, videos, aggregateKeywords, aggregateSummary, allComments, palette, maxComments }) {
+  const totalVideos = videos.length || 1
+  const totalComments = videos.reduce((sum, v) => sum + v.comments.length, 0)
+  const avgComments = totalComments / totalVideos
+  const collageThumbs = videos
+    .slice(0, 4)
+    .map(v => v.info?.thumbnail)
+    .filter(Boolean)
+  const narrative = generateNarrativeSummary(aggregateSummary, aggregateKeywords, allComments)
 
-  const html = buildHTML({
-    info,
-    summary,
-    keywords,
-    comments,
-    sourceUrl: url,
-    palette
-  })
+  const videoCards = videos.map((v, i) => {
+    const tone = v.summary.tone
+    const pos = tone.find(t => t.name === "ポジティブ")?.count || 0
+    const neg = tone.find(t => t.name === "ネガティブ")?.count || 0
+    const neu = tone.find(t => t.name === "ニュートラル")?.count || 0
+    const topComments = v.summary.topLiked.slice(0, 2)
+      .map(c => `<li>${escapeHtml(truncate(c.text, 100))} <span>(👍${c.likeCount})</span></li>`)
+      .join("")
+    const themes = v.summary.themes.slice(0, 3).map(t => `${escapeHtml(t.name)} ${t.count}件`).join(" / ")
+
+    return `
+      <article class="video-card">
+        <div class="rank">#${i + 1}</div>
+        <div class="video-head">
+          ${v.info.thumbnail ? `<img src="${escapeHtml(v.info.thumbnail)}" alt="thumbnail" loading="lazy" />` : ""}
+          <div>
+            <h3><a href="${escapeHtml(v.info.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(v.info.title)}</a></h3>
+            <p class="meta">${escapeHtml(v.info.channel)} / ${escapeHtml(toJst(v.info.publishedAt))}</p>
+            <p class="desc">${escapeHtml(truncate(v.info.description || "概要なし", 150))}</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: ${v.comments.length}件 (上限 ${maxComments}) / 全コメント: ${v.info.comments}</div>
+        <div class="stats">感情: Pos ${pct(pos, v.comments.length || 1).toFixed(1)}% / Neg ${pct(neg, v.comments.length || 1).toFixed(1)}% / Neu ${pct(neu, v.comments.length || 1).toFixed(1)}%</div>
+        <div class="stats">話題: ${themes || "偏りなし"}</div>
+        <ul class="comment-list">${topComments || "<li>高評価コメントなし</li>"}</ul>
+      </article>
+    `
+  }).join("")
+
+  const keywordTags = aggregateKeywords.slice(0, 20).map(([word, count]) =>
+    `<span class="tag">${escapeHtml(word)} <b>${count}</b></span>`
+  ).join("")
+
+  const topThemes = aggregateSummary.themes.slice(0, 6).map(t =>
+    `<li>${escapeHtml(t.name)}: ${t.count}件 (${pct(t.count, totalComments || 1).toFixed(1)}%)</li>`
+  ).join("")
+
+  return `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Keyword Summary</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap");
+
+    :root {
+      --bg: ${palette.bg};
+      --ink: ${palette.ink};
+      --muted: ${palette.muted};
+      --panel: ${palette.panel};
+      --panel-strong: ${palette.panelStrong};
+      --line: ${palette.line};
+      --accent: ${palette.accent};
+      --accent2: ${palette.accent2};
+      --positive: ${palette.positive};
+      --negative: ${palette.negative};
+      --neutral: ${palette.neutral};
+      --shadow: 0 20px 55px rgba(15, 23, 42, 0.12);
+      --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 14%, ${palette.glow1} 0%, transparent 36%),
+        radial-gradient(circle at 90% 2%, ${palette.glow2} 0%, transparent 40%),
+        radial-gradient(circle at 80% 90%, ${palette.glow3} 0%, transparent 32%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 64px; }
+    .hero {
+      background: linear-gradient(140deg, ${palette.heroFrom}, ${palette.heroTo});
+      color: #f8fcff;
+      border-radius: 28px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .kicker {
+      opacity: 0.9;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .hero-head {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 430px);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .hero h1 { margin: 0; font-size: clamp(26px, 4.6vw, 48px); line-height: 1.14; }
+    .hero-media {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(0, 0, 0, 0.18);
+      width: 100%;
+      height: clamp(180px, 22vw, 245px);
+      justify-self: end;
+      align-self: center;
+    }
+    .hero-collage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+    }
+    .hero-collage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .hero p { margin: 8px 0 0; }
+    .grid { margin-top: 16px; display: grid; gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+    .title { margin: 0 0 12px; font-size: 30px; font-weight: 700; }
+    .narrative-box {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 15px;
+      line-height: 1.85;
+      color: #243447;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.68));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .narrative-box p { margin: 0 0 10px; }
+    .narrative-box p:last-child { margin-bottom: 0; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { background: rgba(255, 255, 255, 0.65); border: 1px solid var(--line); border-radius: 999px; padding: 8px 11px; font-size: 12px; }
+    .video-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: var(--shadow-soft); }
+    .video-head { display: grid; grid-template-columns: 220px 1fr; gap: 12px; }
+    .video-head img { width: 100%; border-radius: 10px; object-fit: cover; }
+    .video-head h3 { margin: 0 0 6px; }
+    .video-head h3 a { color: var(--ink); text-decoration: none; }
+    .meta, .desc, .stats { margin: 5px 0; font-size: 13px; color: var(--muted); }
+    .rank { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .comment-list { margin: 8px 0 0; padding-left: 18px; }
+    .comment-list li { margin: 4px 0; font-size: 13px; }
+    .foot { margin-top: 12px; font-size: 12px; color: var(--muted); text-align: right; }
+    @media (max-width: 860px) {
+      .video-head { grid-template-columns: 1fr; }
+      .hero-head { grid-template-columns: 1fr; }
+      .hero-media { width: 100%; height: auto; max-width: 220px; aspect-ratio: 16 / 9; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="kicker">YouTube Comment Intelligence</div>
+      <div class="hero-head">
+        <h1>Keyword Summary: ${escapeHtml(keyword)}</h1>
+        ${collageThumbs.length ? `<div class="hero-media"><div class="hero-collage">${collageThumbs.map((thumb, idx) => `<img src="${escapeHtml(thumb)}" alt="thumbnail rank ${idx + 1}" loading="eager" />`).join("")}</div></div>` : ""}
+      </div>
+      <p>対象動画: 上位 ${videos.length} 件</p>
+      <p>取得コメント総数: ${totalComments} 件 (1動画あたり平均 ${avgComments.toFixed(1)} 件)</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 class="title">コメント内容の要約</h2>
+        <div class="narrative-box">
+          <p>${escapeHtml(narrative[0])}</p>
+          <p>${escapeHtml(narrative[1])}</p>
+          <p>${escapeHtml(narrative[2])}</p>
+        </div>
+      </article>
+      <article class="card">
+        <h2>全体の注目キーワード</h2>
+        <div class="tags">${keywordTags || "キーワード抽出なし"}</div>
+      </article>
+      <article class="card">
+        <h2>全体の話題カテゴリ</h2>
+        <ul>${topThemes || "<li>有意なカテゴリなし</li>"}</ul>
+      </article>
+    </section>
+
+    <section class="grid">
+      ${videoCards}
+    </section>
+
+    <p class="foot">Generated at ${escapeHtml(toJst(new Date().toISOString()))} (JST)</p>
+  </main>
+</body>
+</html>`
+}
+
+async function main() {
+  if (!inputArg) {
+    console.error("動画URLまたは検索キーワードを指定してください")
+    process.exit(1)
+  }
 
   const outDir = path.join(__dirname, "..", "output")
   await fs.mkdir(outDir, { recursive: true })
 
-  const safeTitle = sanitizeFileName(info.title)
-  const reportPath = path.join(outDir, `${safeTitle}.html`)
+  const palette = choosePalette()
+  const videoId = getVideoId(inputArg)
+
+  if (videoId) {
+    const info = await getVideoInfo(videoId)
+    const comments = await getComments(videoId, MAX)
+    const keywords = extractKeywords(comments)
+    const summary = summarizeComments(comments)
+
+    const html = buildHTML({
+      info,
+      summary,
+      keywords,
+      comments,
+      sourceUrl: inputArg,
+      palette
+    })
+
+    const safeTitle = sanitizeFileName(info.title)
+    const reportPath = path.join(outDir, `${safeTitle}.html`)
+    await fs.writeFile(reportPath, html, "utf8")
+
+    console.log("# YouTube Comment Summary")
+    console.log(`モード: URL`)
+    console.log(`動画タイトル: ${info.title}`)
+    console.log(`取得コメント: ${comments.length}`)
+    console.log(`カラーテーマ: ${palette.name}`)
+    console.log(`HTMLレポート: ${reportPath}`)
+    return
+  }
+
+  const videos = await searchVideosByKeyword(inputArg, MAX_VIDEOS)
+  if (videos.length === 0) {
+    console.error("検索キーワードに一致する動画が見つかりませんでした")
+    process.exit(1)
+  }
+
+  const analyzed = []
+  for (const info of videos) {
+    try {
+      const comments = await getComments(info.id, MAX)
+      analyzed.push({
+        info,
+        comments,
+        keywords: extractKeywords(comments),
+        summary: summarizeComments(comments)
+      })
+    } catch (err) {
+      // コメント無効化動画が混ざっても全体処理を継続する
+      analyzed.push({
+        info,
+        comments: [],
+        keywords: [],
+        summary: summarizeComments([])
+      })
+      console.warn(`コメント取得失敗: ${info.videoUrl}`)
+      console.warn(err?.message || err)
+    }
+  }
+
+  const allComments = analyzed.flatMap(v => v.comments)
+  const aggregateKeywords = extractKeywords(allComments)
+  const aggregateSummary = summarizeComments(allComments)
+  const html = buildKeywordHTML({
+    keyword: inputArg,
+    videos: analyzed,
+    aggregateKeywords,
+    aggregateSummary,
+    allComments,
+    palette,
+    maxComments: MAX
+  })
+
+  const reportPath = path.join(outDir, `${sanitizeFileName(inputArg)}_top${analyzed.length}.html`)
   await fs.writeFile(reportPath, html, "utf8")
 
   console.log("# YouTube Comment Summary")
-  console.log(`動画タイトル: ${info.title}`)
-  console.log(`取得コメント: ${comments.length}`)
+  console.log(`モード: キーワード`)
+  console.log(`キーワード: ${inputArg}`)
+  console.log(`対象動画数: ${analyzed.length}`)
+  console.log(`取得コメント総数: ${allComments.length}`)
   console.log(`カラーテーマ: ${palette.name}`)
   console.log(`HTMLレポート: ${reportPath}`)
 }

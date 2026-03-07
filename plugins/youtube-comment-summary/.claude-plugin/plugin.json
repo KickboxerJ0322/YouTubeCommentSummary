@@ -1,0 +1,11 @@
+﻿{
+  "name": "youtube-comment-summary",
+  "description": "YouTube動画コメントを分析し、視覚的なHTMLサマリーレポートを生成するplugin。",
+  "version": "0.1.0",
+  "author": {
+    "name": "YouTubeCommentSummary"
+  },
+  "homepage": "https://github.com/<your-github-user>/<your-repo>",
+  "license": "MIT",
+  "keywords": ["youtube", "comments", "analysis", "summary", "html-report"]
+}

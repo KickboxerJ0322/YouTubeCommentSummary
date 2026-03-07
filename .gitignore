@@ -1,8 +1,8 @@
 # 環境変数（APIキー）
-.claude/skills/YouTubeCommentSummary/.env
+plugins/youtube-comment-summary/.env
 
 # 生成されたHTMLレポート
-.claude/skills/YouTubeCommentSummary/output/
+plugins/youtube-comment-summary/output/
 
 # Node.js
-.claude/skills/YouTubeCommentSummary/node_modules/
+plugins/youtube-comment-summary/node_modules/

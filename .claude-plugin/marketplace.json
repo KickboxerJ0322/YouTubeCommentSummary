@@ -1,0 +1,20 @@
+﻿{
+  "name": "youtube-comment-summary-marketplace",
+  "owner": {
+    "name": "YouTubeCommentSummary"
+  },
+  "metadata": {
+    "description": "YouTube動画コメントを分析し、HTMLレポートを生成するplugin。",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "youtube-comment-summary",
+      "source": "./plugins/youtube-comment-summary",
+      "description": "YouTube動画コメントを分析し、視覚的なHTMLサマリーレポートを生成します。",
+      "version": "0.1.0",
+      "category": "analysis",
+      "tags": ["youtube", "comments", "analysis", "report"]
+    }
+  ]
+}
