@@ -78,7 +78,9 @@ plugins/
 
 ## 出力結果
 
-![サンプル画像1](01_sample01.png)
-![サンプル画像2](02_sample02.png)
+[サンプル画像1](01_sample01.png)
+[サンプル画像2](02_sample02.png)
 
 ## 動画
+
+[YouTubeCommentSummary](https://www.youtube.com/watch?v=KaFmN7d8xKM)
