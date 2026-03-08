@@ -16,6 +16,26 @@ YouTube動画コメントを収集し、分析結果をHTMLレポートとして
 
 ## 使い方
 
+### 事前準備
+
+1. **Node.js のインストール**
+   [Node.js 公式サイト](https://nodejs.org/) から LTS 版をインストールしてください。
+
+2. **YouTube Data API v3 キーの設定**
+   `plugins/youtube-comment-summary/.env` ファイルに以下を記載してください。
+   ```env
+   YOUTUBE_API_KEY=your_api_key_here
+   ```
+   APIキーは [Google Cloud Console](https://console.cloud.google.com/) で取得できます。
+
+3. **依存パッケージのインストール**
+   ```bash
+   cd plugins/youtube-comment-summary
+   npm install
+   ```
+
+### 実行
+
 ```bash
 /YouTubeCommentSummary <YouTubeURL_or_KEYWORD> [MAX_COMMENTS_PER_VIDEO] [MAX_VIDEOS]
 ```
@@ -78,8 +98,10 @@ plugins/
 
 ## 出力結果
 
-[サンプル画像1](01_sample01.png)
-[サンプル画像2](02_sample02.png)
+[サンプル1](01_2026年は”激変”.html)
+[サンプル2](02_生成AI_top3.html)
+[サンプル3](03_フロイド・メイウェザー vs マニー・パッキャオ.html)
+[サンプル4](04_藤井風_top4.html)
 
 ## 動画
 

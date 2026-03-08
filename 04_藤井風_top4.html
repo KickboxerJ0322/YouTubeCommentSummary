@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Keyword Summary</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap");
+
+    :root {
+      --bg: #edf2f6;
+      --ink: #10243b;
+      --muted: #5c6d80;
+      --panel: rgba(255,255,255,0.75);
+      --panel-strong: #ffffff;
+      --line: rgba(16,36,59,0.12);
+      --accent: #0f766e;
+      --accent2: #2563eb;
+      --positive: #16a34a;
+      --negative: #dc2626;
+      --neutral: #94a3b8;
+      --shadow: 0 20px 55px rgba(15, 23, 42, 0.12);
+      --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 14%, rgba(37,99,235,0.25) 0%, transparent 36%),
+        radial-gradient(circle at 90% 2%, rgba(15,118,110,0.24) 0%, transparent 40%),
+        radial-gradient(circle at 80% 90%, rgba(251,146,60,0.2) 0%, transparent 32%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 64px; }
+    .hero {
+      background: linear-gradient(140deg, #0f766e, #2563eb);
+      color: #f8fcff;
+      border-radius: 28px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .kicker {
+      opacity: 0.9;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .hero-head {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 430px);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .hero h1 { margin: 0; font-size: clamp(26px, 4.6vw, 48px); line-height: 1.14; }
+    .hero-media {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(0, 0, 0, 0.18);
+      width: 100%;
+      height: clamp(180px, 22vw, 245px);
+      justify-self: end;
+      align-self: center;
+    }
+    .hero-collage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+    }
+    .hero-collage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .hero p { margin: 8px 0 0; }
+    .grid { margin-top: 16px; display: grid; gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+    .title { margin: 0 0 12px; font-size: 30px; font-weight: 700; }
+    .narrative-box {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 15px;
+      line-height: 1.85;
+      color: #243447;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.68));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .narrative-box p { margin: 0 0 10px; }
+    .narrative-box p:last-child { margin-bottom: 0; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { background: rgba(255, 255, 255, 0.65); border: 1px solid var(--line); border-radius: 999px; padding: 8px 11px; font-size: 12px; }
+    .video-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: var(--shadow-soft); }
+    .video-head { display: grid; grid-template-columns: 220px 1fr; gap: 12px; }
+    .video-head img { width: 100%; border-radius: 10px; object-fit: cover; }
+    .video-head h3 { margin: 0 0 6px; }
+    .video-head h3 a { color: var(--ink); text-decoration: none; }
+    .meta, .desc, .stats { margin: 5px 0; font-size: 13px; color: var(--muted); }
+    .rank { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .comment-list { margin: 8px 0 0; padding-left: 18px; }
+    .comment-list li { margin: 4px 0; font-size: 13px; }
+    .foot { margin-top: 12px; font-size: 12px; color: var(--muted); text-align: right; }
+    @media (max-width: 860px) {
+      .video-head { grid-template-columns: 1fr; }
+      .hero-head { grid-template-columns: 1fr; }
+      .hero-media { width: 100%; height: auto; max-width: 220px; aspect-ratio: 16 / 9; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="kicker">YouTube Comment Intelligence</div>
+      <div class="hero-head">
+        <h1>Keyword Summary: 藤井風</h1>
+        <div class="hero-media"><div class="hero-collage"><img src="https://i.ytimg.com/vi/HWA3fLUzPds/maxresdefault.jpg" alt="thumbnail rank 1" loading="eager" /><img src="https://i.ytimg.com/vi/SfPkl7lol7g/maxresdefault.jpg" alt="thumbnail rank 2" loading="eager" /><img src="https://i.ytimg.com/vi/Crq-aHw1eR8/maxresdefault.jpg" alt="thumbnail rank 3" loading="eager" /><img src="https://i.ytimg.com/vi/UJgPpzZcxGU/maxresdefault.jpg" alt="thumbnail rank 4" loading="eager" /></div></div>
+      </div>
+      <p>対象動画: 上位 4 件</p>
+      <p>取得コメント総数: 245 件 (1動画あたり平均 61.3 件)</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 class="title">コメント内容の要約</h2>
+        <div class="narrative-box">
+          <p>コメント全体では米国・トランプ言及（6.9%）、感謝・称賛（4.1%）に関する反応が目立ちました。全体としてはニュートラルが中心（84.9%）で、ポジティブ 14.7%、ネガティブ 0.4% という構成です。</p>
+          <p>頻出キーワードは「my」、「flower」、「here」が上位に入り、視聴者の注目点が明確に表れています。</p>
+          <p>代表的な声として、前向きな反応「この曲とても好きです🩷どの曲も良いけど声が良い！たまりませんね~😆」、懸念を示す反応「難題っすな 神とはね 確たるわれわれ拠り所もたず生きてません❓ 宇宙を掌握したってさ 別の意味で われらの世界は茫漠とキ...」が確認できます。</p>
+        </div>
+      </article>
+      <article class="card">
+        <h2>全体の注目キーワード</h2>
+        <div class="tags"><span class="tag">my <b>79</b></span><span class="tag">flower <b>54</b></span><span class="tag">here <b>50</b></span><span class="tag">to <b>29</b></span><span class="tag">love <b>28</b></span><span class="tag">is <b>27</b></span><span class="tag">in <b>26</b></span><span class="tag">prema <b>25</b></span><span class="tag">of <b>23</b></span><span class="tag">kaze <b>19</b></span><span class="tag">it <b>19</b></span><span class="tag">are <b>19</b></span><span class="tag">me <b>15</b></span><span class="tag">ni <b>13</b></span><span class="tag">itself <b>13</b></span></div>
+      </article>
+      <article class="card">
+        <h2>全体の話題カテゴリ</h2>
+        <ul><li>米国・トランプ言及: 17件 (6.9%)</li><li>感謝・称賛: 10件 (4.1%)</li><li>情勢分析・考察: 1件 (0.4%)</li><li>不安・懸念: 1件 (0.4%)</li></ul>
+      </article>
+    </section>
+
+    <section class="grid">
+      
+      <article class="video-card">
+        <div class="rank">#1</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/HWA3fLUzPds/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=HWA3fLUzPds" target="_blank" rel="noreferrer">My Place</a></h3>
+            <p class="meta">Fujii Kaze - Topic / 2026/03/06 01:33</p>
+            <p class="desc">Provided to YouTube by Universal Music Group
+
+My Place · Fujii Kaze
+
+2026 World Baseball Classic
+
+℗ 2026 Republic Records, a division of UMG Recording...</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 0件 (上限 120) / 全コメント: 1051</div>
+        <div class="stats">感情: Pos 0.0% / Neg 0.0% / Neu 0.0%</div>
+        <div class="stats">話題: 偏りなし</div>
+        <ul class="comment-list"><li>高評価コメントなし</li></ul>
+      </article>
+    
+      <article class="video-card">
+        <div class="rank">#2</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/SfPkl7lol7g/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=SfPkl7lol7g" target="_blank" rel="noreferrer">Fujii Kaze - Hana (Official Video)</a></h3>
+            <p class="meta">Fujii Kaze / 2023/11/24 21:00</p>
+            <p class="desc">▼ &quot;Hana&quot; digital single
+https://Fujii-Kaze.lnk.to/Hana_EP
+
+
+Starring：Fujii Kaze, Cristian Liberti, Tommy Thungsunawan, DoHoon Kwon, Winston Sky
+
+Direc...</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 120件 (上限 120) / 全コメント: 19380</div>
+        <div class="stats">感情: Pos 18.3% / Neg 0.0% / Neu 81.7%</div>
+        <div class="stats">話題: 米国・トランプ言及 7件 / 感謝・称賛 4件</div>
+        <ul class="comment-list"><li>60歳の還暦を迎えた主婦です。かなり遅いですが今ハマってます。 息子に母さん遅‼️って言われましたがゆっくり今からゆっくり聴きたいと思います❤ 藤井風さん、大好きです🩷歌も大好き😘 <span>(👍200)</span></li><li>心、とられました。 <span>(👍48)</span></li></ul>
+      </article>
+    
+      <article class="video-card">
+        <div class="rank">#3</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/Crq-aHw1eR8/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=Crq-aHw1eR8" target="_blank" rel="noreferrer">【緊急解説】藤井風、WBC観戦に東京ドームに来ている⁉︎新曲My placeも流れる中、語られている説を解説します</a></h3>
+            <p class="meta">藤井風の世界〜KAZE World〜 / 2026/03/07 16:00</p>
+            <p class="desc">速報です。
+いま、藤井風さんのファンの間で“ある予想”がものすごい勢いで広がっています。
+
+それが…
+「風さん、東京ドームに来ているのではないか？」説。
+
+3月6日にリリースされた、WBC史上初の公式サウンドトラック『2026 World Baseball Classic』。
+そこに収録された藤井風...</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 5件 (上限 120) / 全コメント: 7</div>
+        <div class="stats">感情: Pos 0.0% / Neg 0.0% / Neu 100.0%</div>
+        <div class="stats">話題: 偏りなし</div>
+        <ul class="comment-list"><li>韓国戦の大谷打線の時にBGMで風くんのMY Place流れました！その後、大谷ホームイン、鈴木誠也ホームランで2点入りました😭💕✨🎉 <span>(👍18)</span></li><li>⚾️WBCオープニング 暗闇のネオン🎵✨🎵、、ピアノ？！指先にSpotlight✨風なの？！、、ジャーン！✨😎✨！←誰よ💦 始球式も、、選手入場も、、風いない😢 ⚾️選手達が主役だからね😊... <span>(👍14)</span></li></ul>
+      </article>
+    
+      <article class="video-card">
+        <div class="rank">#4</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/UJgPpzZcxGU/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=UJgPpzZcxGU" target="_blank" rel="noreferrer">Fujii Kaze - Prema [Official video]</a></h3>
+            <p class="meta">Fujii Kaze / 2025/09/05 13:00</p>
+            <p class="desc">“Prema&quot; from his 3rd Album &#39;Prema&#39; 
+💿 https://fujii-kaze.lnk.to/Prema-CD_LP
+🎧 https://Fujii-Kaze.lnk.to/Prema
+
+Starring :
+Fujii Kaze
+
+Friends from P...</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 120件 (上限 120) / 全コメント: 11278</div>
+        <div class="stats">感情: Pos 11.7% / Neg 0.8% / Neu 87.5%</div>
+        <div class="stats">話題: 米国・トランプ言及 10件 / 感謝・称賛 6件 / 情勢分析・考察 1件</div>
+        <ul class="comment-list"><li>I met Kaze in person in India and it was an incredible experience....a true angel with love so divin... <span>(👍225)</span></li><li>聞けば聞くほど良くなるのが藤井風 <span>(👍75)</span></li></ul>
+      </article>
+    
+    </section>
+
+    <p class="foot">Generated at 2026/03/08 07:27 (JST)</p>
+  </main>
+</body>
+</html>

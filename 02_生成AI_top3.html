@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Keyword Summary</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap");
+
+    :root {
+      --bg: #f1f3f5;
+      --ink: #111827;
+      --muted: #4b5563;
+      --panel: rgba(255,255,255,0.74);
+      --panel-strong: #ffffff;
+      --line: rgba(17,24,39,0.14);
+      --accent: #0ea5e9;
+      --accent2: #22d3ee;
+      --positive: #22c55e;
+      --negative: #ef4444;
+      --neutral: #9ca3af;
+      --shadow: 0 20px 55px rgba(15, 23, 42, 0.12);
+      --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 14%, rgba(14,165,233,0.2) 0%, transparent 36%),
+        radial-gradient(circle at 90% 2%, rgba(34,211,238,0.2) 0%, transparent 40%),
+        radial-gradient(circle at 80% 90%, rgba(99,102,241,0.16) 0%, transparent 32%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 64px; }
+    .hero {
+      background: linear-gradient(140deg, #0ea5e9, #22d3ee);
+      color: #f8fcff;
+      border-radius: 28px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .kicker {
+      opacity: 0.9;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .hero-head {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 430px);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .hero h1 { margin: 0; font-size: clamp(26px, 4.6vw, 48px); line-height: 1.14; }
+    .hero-media {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(0, 0, 0, 0.18);
+      width: 100%;
+      height: clamp(180px, 22vw, 245px);
+      justify-self: end;
+      align-self: center;
+    }
+    .hero-collage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+    }
+    .hero-collage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .hero p { margin: 8px 0 0; }
+    .grid { margin-top: 16px; display: grid; gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+    .title { margin: 0 0 12px; font-size: 30px; font-weight: 700; }
+    .narrative-box {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 15px;
+      line-height: 1.85;
+      color: #243447;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.68));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .narrative-box p { margin: 0 0 10px; }
+    .narrative-box p:last-child { margin-bottom: 0; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { background: rgba(255, 255, 255, 0.65); border: 1px solid var(--line); border-radius: 999px; padding: 8px 11px; font-size: 12px; }
+    .video-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: var(--shadow-soft); }
+    .video-head { display: grid; grid-template-columns: 220px 1fr; gap: 12px; }
+    .video-head img { width: 100%; border-radius: 10px; object-fit: cover; }
+    .video-head h3 { margin: 0 0 6px; }
+    .video-head h3 a { color: var(--ink); text-decoration: none; }
+    .meta, .desc, .stats { margin: 5px 0; font-size: 13px; color: var(--muted); }
+    .rank { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .comment-list { margin: 8px 0 0; padding-left: 18px; }
+    .comment-list li { margin: 4px 0; font-size: 13px; }
+    .foot { margin-top: 12px; font-size: 12px; color: var(--muted); text-align: right; }
+    @media (max-width: 860px) {
+      .video-head { grid-template-columns: 1fr; }
+      .hero-head { grid-template-columns: 1fr; }
+      .hero-media { width: 100%; height: auto; max-width: 220px; aspect-ratio: 16 / 9; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="kicker">YouTube Comment Intelligence</div>
+      <div class="hero-head">
+        <h1>Keyword Summary: 生成AI</h1>
+        <div class="hero-media"><div class="hero-collage"><img src="https://i.ytimg.com/vi/YFtoy_tfYfc/maxresdefault.jpg" alt="thumbnail rank 1" loading="eager" /><img src="https://i.ytimg.com/vi/mcbYswfiN0A/maxresdefault.jpg" alt="thumbnail rank 2" loading="eager" /><img src="https://i.ytimg.com/vi/MouxBtMqosc/maxresdefault.jpg" alt="thumbnail rank 3" loading="eager" /></div></div>
+      </div>
+      <p>対象動画: 上位 3 件</p>
+      <p>取得コメント総数: 158 件 (1動画あたり平均 52.7 件)</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 class="title">コメント内容の要約</h2>
+        <div class="narrative-box">
+          <p>コメント全体では不安・懸念（4.4%）、感謝・称賛（3.8%）に関する反応が目立ちました。全体としてはニュートラルが中心（88.0%）で、ポジティブ 6.3%、ネガティブ 5.7% という構成です。</p>
+          <p>頻出キーワードは「ai」、「grok」、「そして」が上位に入り、視聴者の注目点が明確に表れています。</p>
+          <p>代表的な声として、前向きな反応「良い情報を取得しました。いつもありがとうございます♪」、懸念を示す反応「AIは過去データー未来データーがない、良心回路持たないAI増えても心無いから怖いよ、」が確認できます。</p>
+        </div>
+      </article>
+      <article class="card">
+        <h2>全体の注目キーワード</h2>
+        <div class="tags"><span class="tag">ai <b>6</b></span><span class="tag">grok <b>3</b></span><span class="tag">そして <b>2</b></span><span class="tag">のび太 <b>2</b></span><span class="tag">道具 <b>2</b></span><span class="tag">aga <b>2</b></span><span class="tag">では <b>2</b></span><span class="tag">gigo <b>2</b></span><span class="tag">garbage <b>2</b></span><span class="tag">aiの選び方で結果が変わるの面白いよね <b>2</b></span><span class="tag">最近aicarmaでブランドのai認知度測れるって知ったよ <b>2</b></span><span class="tag">can <b>2</b></span><span class="tag">someone <b>2</b></span><span class="tag">explain <b>2</b></span><span class="tag">confused <b>2</b></span></div>
+      </article>
+      <article class="card">
+        <h2>全体の話題カテゴリ</h2>
+        <ul><li>不安・懸念: 7件 (4.4%)</li><li>感謝・称賛: 6件 (3.8%)</li><li>米国・トランプ言及: 4件 (2.5%)</li><li>情勢分析・考察: 3件 (1.9%)</li></ul>
+      </article>
+    </section>
+
+    <section class="grid">
+      
+      <article class="video-card">
+        <div class="rank">#1</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/YFtoy_tfYfc/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=YFtoy_tfYfc" target="_blank" rel="noreferrer">【今さら聞けない？】生成AIとは？AIとどう違うの？（図解で簡単にわかりやすく解説）</a></h3>
+            <p class="meta">キノコード / プログラミング学習チャンネル / 2025/01/28 20:00</p>
+            <p class="desc">キノクエストの登録・詳細はこちらから▶︎https://kino-code.com/kq_service_a/?utm_source=youtube.com&amp;utm_medium=referral&amp;utm_campaign=YFtoy_tfYfc_gaiyo_kq_service_a/
+
+プログラミ...</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 12件 (上限 100) / 全コメント: 13</div>
+        <div class="stats">感情: Pos 8.3% / Neg 0.0% / Neu 91.7%</div>
+        <div class="stats">話題: 情勢分析・考察 1件 / 感謝・称賛 1件</div>
+        <ul class="comment-list"><li>AIは漢字をもうすこし正確に読めないものか。 <span>(👍2)</span></li><li>AIなどはできません、AIは単にコンピューターが高速になりコンペ―命令が早くなり、メモリーが高速になり、だいよりになっただけですよ、若造わかったか、私はコンピュータ開発保守を65年前からNECでやって... <span>(👍1)</span></li></ul>
+      </article>
+    
+      <article class="video-card">
+        <div class="rank">#2</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/mcbYswfiN0A/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=mcbYswfiN0A" target="_blank" rel="noreferrer">人間の脳細胞🧠 VS 生成AI</a></h3>
+            <p class="meta">ソフトバンク公式 ビジネスチャンネル / 2024/11/02 16:10</p>
+            <p class="desc">概要なし</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 100件 (上限 100) / 全コメント: 1169</div>
+        <div class="stats">感情: Pos 4.0% / Neg 9.0% / Neu 87.0%</div>
+        <div class="stats">話題: 不安・懸念 7件 / 感謝・称賛 4件 / 情勢分析・考察 1件</div>
+        <ul class="comment-list"><li>10年後、人間がAIに勝てる要素は煩悩だけになる。 <span>(👍25)</span></li><li>生成AIに頼りすぎると、思考力や記憶力、創造性などの人間固有の能力が低下するリスクや、情報が誤っている可能性、セキュリティ上の問題、そしてキャリアへの悪影響が懸念されます。AIはあくまで補助ツールであ... <span>(👍10)</span></li></ul>
+      </article>
+    
+      <article class="video-card">
+        <div class="rank">#3</div>
+        <div class="video-head">
+          <img src="https://i.ytimg.com/vi/MouxBtMqosc/maxresdefault.jpg" alt="thumbnail" loading="lazy" />
+          <div>
+            <h3><a href="https://www.youtube.com/watch?v=MouxBtMqosc" target="_blank" rel="noreferrer">課金するべきはこのAIです！#AI #生成AI #ChatGPT #Gemini #Claude #Grok #genspark #画像生成</a></h3>
+            <p class="meta">Elith / 2025/07/25 17:45</p>
+            <p class="desc">概要なし</p>
+          </div>
+        </div>
+        <div class="stats">取得コメント: 46件 (上限 100) / 全コメント: 71</div>
+        <div class="stats">感情: Pos 10.9% / Neg 0.0% / Neu 89.1%</div>
+        <div class="stats">話題: 米国・トランプ言及 4件 / 情勢分析・考察 1件 / 感謝・称賛 1件</div>
+        <ul class="comment-list"><li>これはエアプだわ。GensparkのAIチャットは、コンテキスト長があまりにも少なくすぐにチャット機能制限がくる。過去のチャット内容の記録もできない。 <span>(👍65)</span></li><li>AIの選び方で結果が変わるの面白いよね！最近AICarmaでブランドのAI認知度測れるって知ったよ。 <span>(👍64)</span></li></ul>
+      </article>
+    
+    </section>
+
+    <p class="foot">Generated at 2026/03/08 08:08 (JST)</p>
+  </main>
+</body>
+</html>
