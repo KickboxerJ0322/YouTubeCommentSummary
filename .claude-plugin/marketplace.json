@@ -1,7 +1,7 @@
 ﻿{
-  "name": "youtube-comment-summary-marketplace",
+  "name": "youtube-comment-summary-skills",
   "owner": {
-    "name": "YouTubeCommentSummary"
+    "name": "Kickboxer J"
   },
   "metadata": {
     "description": "YouTube動画コメントを分析し、HTMLレポートを生成するplugin。",
