@@ -98,11 +98,11 @@ plugins/
 
 ## 出力結果（サマリー）
 
-[サンプル1](01_sample1.png)
-[サンプル2](02_sample2.png)
-[サンプル3](03_sample3.png)
-[サンプル4](04_sample4.png)
+![サンプル1](01_sample1.png)
+![サンプル2](02_sample2.png)
+![サンプル3](03_sample3.png)
+![サンプル4](04_sample4.png)
 
 ## 動画
 
-[YouTubeCommentSummary](https://www.youtube.com/watch?v=KaFmN7d8xKM)
+[![YouTubeCommentSummary](https://img.youtube.com/vi/KaFmN7d8xKM/0.jpg)](https://www.youtube.com/watch?v=KaFmN7d8xKM)
